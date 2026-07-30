@@ -1,0 +1,23 @@
+[project]
+name = "api-gateway"
+version = "0.1.0"
+description = "GraphGPT Stateless API Gateway"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "httpx",
+    "pyjwt",
+    "cryptography",
+    "pydantic",
+    "pydantic-settings",
+    "structlog",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+]
