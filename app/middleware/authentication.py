@@ -12,9 +12,14 @@ PUBLIC_PATHS = [
     "/auth/login",
     "/auth/register",
     "/auth/refresh",
+    "/auth/verify-email",
+    "/auth/resend-verification",
+    "/auth/forgot-password",
+    "/auth/reset-password",
     "/health",
     "/ready",
     "/live",
+    "/info",
 ]
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
@@ -28,15 +33,19 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         if any(p in path for p in PUBLIC_PATHS):
             return await call_next(request)
 
+        token = None
         auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            logger.warning("Missing or invalid Authorization header", path=path)
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+        else:
+            token = request.cookies.get("access_token")
+
+        if not token:
+            logger.warning("Missing or invalid authentication credentials", path=path)
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={"detail": "Authentication credentials were not provided or are malformed."}
             )
-
-        token = auth_header.split(" ")[1]
         try:
             payload = jwt_service.decode_token(token)
             # Store validated user identity in request state for downstream headers injection

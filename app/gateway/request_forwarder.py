@@ -38,6 +38,12 @@ class RequestForwarder:
         if hasattr(request.state, "user_id"):
             headers["X-User-Id"] = str(request.state.user_id)
             
+        # Ensure Bearer Authorization header is forwarded downstream even if it came from a cookie
+        if "authorization" not in headers:
+            token = request.cookies.get("access_token")
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+            
         body = await request.body()
         return headers, body, dict(request.query_params), dict(request.cookies)
 

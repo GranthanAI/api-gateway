@@ -95,23 +95,22 @@ Before running the microservices, apply CQL/SQL schemas:
 
 Launch the microservice application servers in separate terminal panes:
 
-1. **Start Graph Service** (Port `8000`):
-   ```bash
-   cd graph-service
-   make run
-   ```
-2. **Start Auth Service** (Port `8001`):
-   Edit the Makefile or uvicorn command command line to specify port `8001`:
+1. **Start Auth Service** (Port `8001`):
    ```bash
    cd auth-service
    uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
    ```
-3. **Start Conversation Service** (Port `8002`):
-   Run uvicorn with port `8002`:
+2. **Start Conversation Service** (Port `8002`):
    ```bash
    cd conversation-service
    uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8002
    ```
+3. **Start Graph Service** (Port `8000`):
+   ```bash
+   cd graph-service
+   make run
+   ```
+
 
 ---
 

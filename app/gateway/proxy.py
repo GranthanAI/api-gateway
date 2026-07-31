@@ -63,4 +63,4 @@ async def reverse_proxy(request: Request) -> Response:
         )
         
     # 3. Handle response formatting
-    return response_handler.format_response(response)
+    return response_handler.format_response(response, request.url.path)
