@@ -32,7 +32,9 @@ async def gateway_info(request: Request):
     checks = [
         ("auth", settings.AUTH_SERVICE_URL, "/health"),
         ("conversation", settings.CONVERSATION_SERVICE_URL, "/v1/health/live"),
-        ("graph", settings.GRAPH_SERVICE_URL, "/graph/health")
+        ("llm", settings.LLM_SERVICE_URL, "/health"),
+        ("graph", settings.GRAPH_SERVICE_URL, "/graph/health"),
+        ("memory", settings.MEMORY_SERVICE_URL, "/health"),
     ]
     
     for name, base_url, path in checks:
@@ -91,3 +93,31 @@ async def graph_health(request: Request):
     except Exception as e:
         logger.error("Graph health check proxy failed", error=str(e))
         return {"status": "unhealthy", "detail": "Graph microservice is offline or timed out."}
+
+@router.get("/llm/health", status_code=status.HTTP_200_OK, tags=["LLM"])
+async def llm_health(request: Request):
+    """Proxies request to LLM Service health check endpoint."""
+    client: httpx.AsyncClient = request.app.state.client
+    target_url = f"{settings.LLM_SERVICE_URL.rstrip('/')}/ready"
+    try:
+        resp = await client.get(target_url, timeout=5.0)
+        return resp.json()
+    except Exception as e:
+        logger.error("LLM health check proxy failed", error=str(e))
+        return {"status": "unhealthy", "detail": "LLM microservice is offline or timed out."}
+
+@router.get("/memory/health", status_code=status.HTTP_200_OK, tags=["Gateway Health & Information"])
+async def memory_health(request: Request):
+    """
+    Proxies request to Memory Service deep readiness endpoint.
+    Note: Memory Service exposes no other public routes — it is called
+    internally by the LLM Service via gRPC/HTTP, never directly by clients.
+    """
+    client: httpx.AsyncClient = request.app.state.client
+    target_url = f"{settings.MEMORY_SERVICE_URL.rstrip('/')}/internal/health/ready"
+    try:
+        resp = await client.get(target_url, timeout=5.0)
+        return resp.json()
+    except Exception as e:
+        logger.error("Memory health check proxy failed", error=str(e))
+        return {"status": "unhealthy", "detail": "Memory microservice is offline or timed out."}

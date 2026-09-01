@@ -8,6 +8,7 @@ class ServiceRegistry:
         self._services = {
             "auth": settings.AUTH_SERVICE_URL,
             "conversation": settings.CONVERSATION_SERVICE_URL,
+            "llm": settings.LLM_SERVICE_URL,
             "graph": settings.GRAPH_SERVICE_URL
         }
 

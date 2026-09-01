@@ -20,4 +20,5 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "httpx",
+    "asyncpg",
 ]

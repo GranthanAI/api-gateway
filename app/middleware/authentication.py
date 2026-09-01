@@ -40,6 +40,12 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         else:
             token = request.cookies.get("access_token")
 
+        # SSE clients (EventSource) cannot set custom headers, so the stream
+        # route accepts a ?token= query parameter as a fallback, matching
+        # Conversation Service's own get_current_user dependency.
+        if not token and path.startswith("/api/v1/stream/"):
+            token = request.query_params.get("token")
+
         if not token:
             logger.warning("Missing or invalid authentication credentials", path=path)
             return JSONResponse(

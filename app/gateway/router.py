@@ -21,6 +21,8 @@ class GatewayRouter:
             return "auth", "/sessions" + normalized_path[len("/sessions"):]
         elif normalized_path.startswith("/conversations"):
             return "conversation", "/v1/conversations" + normalized_path[len("/conversations"):]
+        elif normalized_path.startswith("/stream"):
+            return "conversation", "/v1/stream" + normalized_path[len("/stream"):]
         elif normalized_path.startswith("/graph"):
             return "graph", "/graph" + normalized_path[len("/graph"):]
             

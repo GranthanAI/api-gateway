@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.lifespan import lifespan
 from app.core.middleware import register_middleware
-from app.api.routes import auth, conversation, graph, health, users, sessions
+from app.api.routes import auth, conversation, graph, health, users, sessions, stream
 
 tags_metadata = [
     {"name": "Gateway Health & Information", "description": "Liveness, readiness, and service statuses"},
@@ -34,6 +34,7 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(sessions.router, prefix="/api/v1")
 app.include_router(conversation.router, prefix="/api/v1")
+app.include_router(stream.router, prefix="/api/v1")
 app.include_router(graph.router, prefix="/api/v1")
 
 

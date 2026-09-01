@@ -12,7 +12,9 @@ class Settings(BaseSettings):
 
     AUTH_SERVICE_URL: str = "http://localhost:8001"
     CONVERSATION_SERVICE_URL: str = "http://localhost:8002"
+    LLM_SERVICE_URL: str = "http://localhost:8003"
     GRAPH_SERVICE_URL: str = "http://localhost:8000"
+    MEMORY_SERVICE_URL: str = "http://localhost:8004"
 
     JWT_SECRET_KEY: str = "supersecretjwtkeyforauthservicelocaldvelopment12345"
     JWT_ALGORITHM: str = "HS256"
