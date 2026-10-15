@@ -15,8 +15,16 @@ class Settings(BaseSettings):
     LLM_SERVICE_URL: str = "http://localhost:8003"
     GRAPH_SERVICE_URL: str = "http://localhost:8000"
     MEMORY_SERVICE_URL: str = "http://localhost:8004"
+    FILE_SERVICE_URL: str = "http://localhost:8006"
+
+    # Comma-separated browser origins allowed by CORS ("*" = any).
+    CORS_ALLOW_ORIGINS: str = "*"
 
     JWT_SECRET_KEY: str = "supersecretjwtkeyforauthservicelocaldvelopment12345"
     JWT_ALGORITHM: str = "HS256"
+
+    @property
+    def cors_allow_origins(self) -> list[str]:
+        return [o.strip() for o in self.CORS_ALLOW_ORIGINS.split(",") if o.strip()]
 
 settings = Settings()
