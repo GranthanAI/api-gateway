@@ -34,3 +34,9 @@ def test_internal_and_traversal_paths_are_not_routed(path):
 def test_files_prefix_does_not_swallow_lookalikes():
     assert gateway_router.route_request("/api/v1/filesystem") is None
 
+
+
+def test_client_supplied_identity_header_is_never_forwarded():
+    from app.gateway.request_forwarder import HOP_BY_HOP_HEADERS
+
+    assert "x-user-id" in HOP_BY_HOP_HEADERS

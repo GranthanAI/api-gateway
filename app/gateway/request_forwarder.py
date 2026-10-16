@@ -11,6 +11,9 @@ HOP_BY_HOP_HEADERS = [
     "transfer-encoding",
     "upgrade",
     "host",
+    # Identity is set only from the validated JWT below; a client-supplied
+    # value (any casing) must never be forwarded.
+    "x-user-id",
 ]
 
 class RequestForwarder:
