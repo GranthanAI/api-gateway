@@ -33,6 +33,10 @@ class GatewayRouter:
             return "conversation", "/v1/stream" + normalized_path[len("/stream"):]
         elif normalized_path == "/files" or normalized_path.startswith("/files/"):
             return "file", normalized_path
+        elif normalized_path == "/tools":
+            # Tool discovery: the LLM service owns the tool registry. Only this exact path is
+            # routed (no sub-paths), and the route itself is GET-only (see api/routes/tools.py).
+            return "llm", "/api/v1/tools"
         elif normalized_path.startswith("/graph"):
             return "graph", "/graph" + normalized_path[len("/graph"):]
             
