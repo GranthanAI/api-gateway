@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.lifespan import lifespan
 from app.core.middleware import register_middleware
-from app.api.routes import auth, conversation, graph, health, users, sessions, stream
+from app.api.routes import auth, conversation, files, graph, health, users, sessions, stream
 
 tags_metadata = [
     {"name": "Gateway Health & Information", "description": "Liveness, readiness, and service statuses"},
@@ -14,6 +14,7 @@ tags_metadata = [
     {"name": "Session Management", "description": "Active session tracking and device revocation"},
     {"name": "Conversations", "description": "Manage conversation catalogs and branching"},
     {"name": "Messages", "description": "Send and retrieve messages, streaming history, and regeneration"},
+    {"name": "Files", "description": "Presigned upload, processing status, download, retry, and delete for user files"},
     {"name": "Graph", "description": "Asynchronous Neo4j lineage visualization and search operations"},
 ]
 
@@ -35,6 +36,7 @@ app.include_router(users.router, prefix="/api/v1")
 app.include_router(sessions.router, prefix="/api/v1")
 app.include_router(conversation.router, prefix="/api/v1")
 app.include_router(stream.router, prefix="/api/v1")
+app.include_router(files.router, prefix="/api/v1")
 app.include_router(graph.router, prefix="/api/v1")
 
 
@@ -80,7 +82,8 @@ def custom_openapi():
     services_to_fetch = [
         ("auth", settings.AUTH_SERVICE_URL, "/api/v1/auth"),
         ("conversation", settings.CONVERSATION_SERVICE_URL, "/api/v1/conversations"),
-        ("graph", settings.GRAPH_SERVICE_URL, "/api/v1/graph")
+        ("graph", settings.GRAPH_SERVICE_URL, "/api/v1/graph"),
+        ("file", settings.FILE_SERVICE_URL, "/api/v1/files"),
     ]
 
     for service_name, base_url, gateway_prefix in services_to_fetch:
@@ -109,6 +112,9 @@ def custom_openapi():
                         elif service_name == "conversation":
                             if path.startswith("/v1/conversations"):
                                 mapped_path = "/api/v1/conversations" + path[len("/v1/conversations"):]
+                        elif service_name == "file":
+                            if path == "/files" or path.startswith("/files/"):
+                                mapped_path = "/api/v1" + path
                         elif service_name == "graph":
                             if path.startswith("/graph"):
                                 mapped_path = "/api/v1/graph" + path[len("/graph"):]
@@ -118,6 +124,8 @@ def custom_openapi():
                             journey_tag = "Authentication"
                             if service_name == "graph":
                                 journey_tag = "Graph"
+                            elif service_name == "file":
+                                journey_tag = "Files"
                             elif service_name == "conversation":
                                 if "/messages" in mapped_path:
                                     journey_tag = "Messages"

@@ -35,6 +35,7 @@ async def gateway_info(request: Request):
         ("llm", settings.LLM_SERVICE_URL, "/health"),
         ("graph", settings.GRAPH_SERVICE_URL, "/graph/health"),
         ("memory", settings.MEMORY_SERVICE_URL, "/health"),
+        ("file", settings.FILE_SERVICE_URL, "/health/live"),
     ]
     
     for name, base_url, path in checks:

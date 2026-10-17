@@ -13,6 +13,14 @@ class GatewayRouter:
         if path.startswith("/api/v1"):
             normalized_path = path[len("/api/v1"):]
 
+        # Never forward traversal segments or anything under an "internal"
+        # segment: file-service's /internal/** is service-to-service only, and
+        # the HTTP client normalizes ".." so "/files/../internal/..." would
+        # otherwise land on it.
+        segments = [s.lower() for s in normalized_path.split("/")]
+        if any(s in ("..", ".", "internal") for s in segments):
+            return None
+
         if normalized_path.startswith("/auth"):
             return "auth", "/auth" + normalized_path[len("/auth"):]
         elif normalized_path.startswith("/users"):
@@ -23,6 +31,8 @@ class GatewayRouter:
             return "conversation", "/v1/conversations" + normalized_path[len("/conversations"):]
         elif normalized_path.startswith("/stream"):
             return "conversation", "/v1/stream" + normalized_path[len("/stream"):]
+        elif normalized_path == "/files" or normalized_path.startswith("/files/"):
+            return "file", normalized_path
         elif normalized_path.startswith("/graph"):
             return "graph", "/graph" + normalized_path[len("/graph"):]
             

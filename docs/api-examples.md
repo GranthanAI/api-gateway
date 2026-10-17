@@ -525,3 +525,33 @@ curl -X POST "$BASE/conversations/$CONV_ID/messages" -H "Authorization: Bearer $
 # 7. Confirm the finished reply is durably stored
 curl "$BASE/conversations/$CONV_ID/messages" -H "Authorization: Bearer $TOKEN"
 ```
+
+---
+
+## Files (via File Service)
+
+All routes require `Authorization: Bearer <access_token>`; the gateway forwards it unchanged. Upload is presign-based: the file bytes go straight from the client to MinIO, never through the gateway. `/internal/**` on File Service is service-to-service only and is never routed (404).
+
+```bash
+# 1. Initiate: returns document_id + a presigned PUT URL
+curl -X POST http://localhost:8080/api/v1/files/upload/initiate \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"filename":"physics.pdf","content_type":"application/pdf","size_bytes":1024}'
+
+# 2. PUT the bytes to the presigned URL returned above (not via the gateway)
+curl -X PUT --upload-file physics.pdf -H "Content-Type: application/pdf" "<upload_url>"
+
+# 3. Complete: triggers ingestion
+curl -X POST http://localhost:8080/api/v1/files/$DOC_ID/complete -H "Authorization: Bearer $TOKEN"
+
+# 4. Poll until READY (UPLOADED -> PROCESSING -> READY | FAILED)
+curl http://localhost:8080/api/v1/files/$DOC_ID/status -H "Authorization: Bearer $TOKEN"
+
+curl http://localhost:8080/api/v1/files                    -H "Authorization: Bearer $TOKEN"   # list
+curl http://localhost:8080/api/v1/files/$DOC_ID            -H "Authorization: Bearer $TOKEN"   # metadata
+curl http://localhost:8080/api/v1/files/$DOC_ID/download   -H "Authorization: Bearer $TOKEN"   # presigned GET URL
+curl -X POST   http://localhost:8080/api/v1/files/$DOC_ID/retry -H "Authorization: Bearer $TOKEN"  # FAILED -> PROCESSING
+curl -X DELETE http://localhost:8080/api/v1/files/$DOC_ID  -H "Authorization: Bearer $TOKEN"
+```
+
+Without a token every call returns `401`. See the request body fields in the gateway's Swagger UI (`/docs`, tag **Files**). The exact `initiate` body is defined by File Service's `InitiateUploadRequest`; these examples were not run live.

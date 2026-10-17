@@ -22,3 +22,6 @@ dev = [
     "httpx",
     "asyncpg",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
