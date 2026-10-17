@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.lifespan import lifespan
 from app.core.middleware import register_middleware
-from app.api.routes import auth, conversation, files, graph, health, users, sessions, stream
+from app.api.routes import auth, conversation, files, graph, health, users, sessions, stream, tools
 
 tags_metadata = [
     {"name": "Gateway Health & Information", "description": "Liveness, readiness, and service statuses"},
@@ -16,6 +16,7 @@ tags_metadata = [
     {"name": "Messages", "description": "Send and retrieve messages, streaming history, and regeneration"},
     {"name": "Files", "description": "Presigned upload, processing status, download, retry, and delete for user files"},
     {"name": "Graph", "description": "Asynchronous Neo4j lineage visualization and search operations"},
+    {"name": "Tools", "description": "Discovery of the tools a user may explicitly select for a message"},
 ]
 
 app = FastAPI(
@@ -38,6 +39,7 @@ app.include_router(conversation.router, prefix="/api/v1")
 app.include_router(stream.router, prefix="/api/v1")
 app.include_router(files.router, prefix="/api/v1")
 app.include_router(graph.router, prefix="/api/v1")
+app.include_router(tools.router, prefix="/api/v1")
 
 
 # --- Dynamic OpenAPI Schema Aggregator ---
