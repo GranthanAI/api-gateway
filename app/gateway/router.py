@@ -39,6 +39,13 @@ class GatewayRouter:
             return "llm", "/api/v1/tools"
         elif normalized_path.startswith("/graph"):
             return "graph", "/graph" + normalized_path[len("/graph"):]
+        elif normalized_path == "/preferences" or normalized_path.startswith("/preferences/"):
+            # User AI / application preferences: owned by conversation-service.
+            return "conversation", "/v1" + normalized_path
+        elif normalized_path in ("/memory/settings", "/memory/facts") or normalized_path.startswith("/memory/facts/"):
+            # User-facing memory controls only; /memory/health is answered by the gateway
+            # itself and memory-service's /internal/** is never reachable.
+            return "memory", normalized_path
             
         return None
 

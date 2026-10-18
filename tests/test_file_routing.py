@@ -40,3 +40,28 @@ def test_client_supplied_identity_header_is_never_forwarded():
     from app.gateway.request_forwarder import HOP_BY_HOP_HEADERS
 
     assert "x-user-id" in HOP_BY_HOP_HEADERS
+
+
+def test_preferences_route_to_conversation_service():
+    assert gateway_router.route_request("/api/v1/preferences") == ("conversation", "/v1/preferences")
+
+
+@pytest.mark.parametrize("path", ["/api/v1/memory/settings", "/api/v1/memory/facts",
+                                  "/api/v1/memory/facts/0190a1b2-0000-7000-8000-000000000001"])
+def test_user_memory_routes_go_to_memory_service_unchanged(path):
+    assert gateway_router.route_request(path) == ("memory", path[len("/api/v1"):])
+
+
+@pytest.mark.parametrize("path", ["/api/v1/memory/internal/memory/context", "/api/v1/memory/llm/summarize",
+                                  "/api/v1/memory/context", "/api/v1/memory"])
+def test_other_memory_paths_are_not_routed(path):
+    assert gateway_router.route_request(path) is None
+
+
+def test_memory_and_preferences_require_auth():
+    from fastapi.testclient import TestClient
+    from app.main import app
+
+    client = TestClient(app)
+    assert client.get("/api/v1/preferences").status_code == 401
+    assert client.get("/api/v1/memory/facts").status_code == 401

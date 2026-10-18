@@ -11,6 +11,7 @@ class ServiceRegistry:
             "llm": settings.LLM_SERVICE_URL,
             "graph": settings.GRAPH_SERVICE_URL,
             "file": settings.FILE_SERVICE_URL,
+            "memory": settings.MEMORY_SERVICE_URL,
         }
 
     def get_service_url(self, service_name: str) -> str | None:
