@@ -65,3 +65,16 @@ def test_memory_and_preferences_require_auth():
     client = TestClient(app)
     assert client.get("/api/v1/preferences").status_code == 401
     assert client.get("/api/v1/memory/facts").status_code == 401
+
+
+def test_custom_modes_route_to_conversation_service():
+    assert gateway_router.route_request("/api/v1/custom-modes") == ("conversation", "/v1/custom-modes")
+    mode = "3f2c1c2e-0000-4000-8000-000000000001"
+    assert gateway_router.route_request(f"/api/v1/custom-modes/{mode}") == ("conversation", f"/v1/custom-modes/{mode}")
+
+
+def test_custom_modes_require_auth_and_only_allowed_methods_are_routed():
+    client = TestClient(app)
+    assert client.get("/api/v1/custom-modes").status_code == 401
+    assert client.post("/api/v1/custom-modes", json={}).status_code == 401
+    assert client.delete("/api/v1/custom-modes/x").status_code == 401

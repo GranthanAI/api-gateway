@@ -39,6 +39,9 @@ class GatewayRouter:
             return "llm", "/api/v1/tools"
         elif normalized_path.startswith("/graph"):
             return "graph", "/graph" + normalized_path[len("/graph"):]
+        elif normalized_path == "/custom-modes" or normalized_path.startswith("/custom-modes/"):
+            # User-owned custom modes: owned by conversation-service (PostgreSQL).
+            return "conversation", "/v1" + normalized_path
         elif normalized_path == "/preferences" or normalized_path.startswith("/preferences/"):
             # User AI / application preferences: owned by conversation-service.
             return "conversation", "/v1" + normalized_path
