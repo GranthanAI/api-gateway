@@ -74,6 +74,9 @@ def test_custom_modes_route_to_conversation_service():
 
 
 def test_custom_modes_require_auth_and_only_allowed_methods_are_routed():
+    from fastapi.testclient import TestClient
+    from app.main import app
+
     client = TestClient(app)
     assert client.get("/api/v1/custom-modes").status_code == 401
     assert client.post("/api/v1/custom-modes", json={}).status_code == 401
