@@ -20,7 +20,7 @@ def test_no_subpaths_or_lookalikes_are_routed(path):
 
 
 def _token():
-    return jwt.encode({"sub": "user-1", "exp": int(time.time()) + 600}, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    return jwt.encode({"sub": "user-1", "iss": settings.JWT_ISSUER, "exp": int(time.time()) + 600}, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
 def _client(handler):

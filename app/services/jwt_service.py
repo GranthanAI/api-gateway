@@ -10,7 +10,8 @@ class JWTService:
             token,
             settings.JWT_SECRET_KEY,
             algorithms=[settings.JWT_ALGORITHM],
-            options={"require": ["sub", "exp"]}
+            issuer=settings.JWT_ISSUER,
+            options={"require": ["sub", "exp", "iss"]}
         )
 
 jwt_service = JWTService()

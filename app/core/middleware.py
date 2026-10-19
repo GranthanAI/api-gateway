@@ -3,6 +3,7 @@ from app.middleware.correlation import CorrelationIDMiddleware
 from app.middleware.authentication import AuthenticationMiddleware
 from app.middleware.request_logging import RequestLoggingMiddleware
 from app.middleware.exception_handler import ExceptionHandlerMiddleware
+from app.middleware.body_limit import BodySizeLimitMiddleware
 from app.middleware.cors import setup_cors
 
 def register_middleware(app: FastAPI) -> None:
@@ -14,4 +15,6 @@ def register_middleware(app: FastAPI) -> None:
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(CorrelationIDMiddleware)
     app.add_middleware(AuthenticationMiddleware)
+    # Inside CORS (so a 413 carries CORS headers) but before authentication/proxying: oversized bodies never travel on.
+    app.add_middleware(BodySizeLimitMiddleware)
     setup_cors(app)
