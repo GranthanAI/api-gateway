@@ -37,6 +37,9 @@ class GatewayRouter:
             # Tool discovery: the LLM service owns the tool registry. Only this exact path is
             # routed (no sub-paths), and the route itself is GET-only (see api/routes/tools.py).
             return "llm", "/api/v1/tools"
+        elif normalized_path == "/visualizations/config" or normalized_path == "/visualizations/repair"                 or normalized_path.startswith("/visualizations/manim/jobs"):
+            # Mermaid repair + Manim jobs: owned by the LLM service (X-User-Id is set from the JWT by the gateway).
+            return "llm", "/api/v1" + normalized_path
         elif normalized_path.startswith("/graph"):
             return "graph", "/graph" + normalized_path[len("/graph"):]
         elif normalized_path == "/custom-modes" or normalized_path.startswith("/custom-modes/"):
