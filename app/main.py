@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.lifespan import lifespan
 from app.core.middleware import register_middleware
-from app.api.routes import auth, conversation, custom_modes, files, graph, health, memory, preferences, users, sessions, stream, tools, visualizations
+from app.api.routes import artifacts, auth, conversation, custom_modes, exports, files, graph, health, memory, preferences, users, sessions, stream, tools, visualizations
 
 tags_metadata = [
     {"name": "Gateway Health & Information", "description": "Liveness, readiness, and service statuses"},
@@ -16,6 +16,8 @@ tags_metadata = [
     {"name": "Messages", "description": "Send and retrieve messages, streaming history, and regeneration"},
     {"name": "Files", "description": "Presigned upload, processing status, download, retry, and delete for user files"},
     {"name": "Graph", "description": "Asynchronous Neo4j lineage visualization and search operations"},
+    {"name": "Artifacts", "description": "Persisted Mermaid diagrams and Manim animations: list, preview, download, retry"},
+    {"name": "Exports", "description": "Conversation and hierarchy export jobs (Markdown, PDF, ZIP) with authenticated download"},
     {"name": "Visualizations", "description": "Mermaid repair and Manim animation jobs (owner-scoped, authenticated media)"},
     {"name": "Tools", "description": "Discovery of the tools a user may explicitly select for a message"},
 ]
@@ -44,6 +46,8 @@ app.include_router(tools.router, prefix="/api/v1")
 app.include_router(visualizations.router, prefix="/api/v1")
 app.include_router(preferences.router, prefix="/api/v1")
 app.include_router(custom_modes.router, prefix="/api/v1")
+app.include_router(artifacts.router, prefix="/api/v1")
+app.include_router(exports.router, prefix="/api/v1")
 app.include_router(memory.router, prefix="/api/v1")
 
 

@@ -37,8 +37,9 @@ class GatewayRouter:
             # Tool discovery: the LLM service owns the tool registry. Only this exact path is
             # routed (no sub-paths), and the route itself is GET-only (see api/routes/tools.py).
             return "llm", "/api/v1/tools"
-        elif normalized_path == "/visualizations/config" or normalized_path == "/visualizations/repair"                 or normalized_path.startswith("/visualizations/manim/jobs"):
-            # Mermaid repair + Manim jobs: owned by the LLM service (X-User-Id is set from the JWT by the gateway).
+        elif normalized_path == "/visualizations/config" or normalized_path == "/visualizations/repair":
+            # Mermaid repair + visualization settings: owned by the LLM service (X-User-Id is set from the JWT by the
+            # gateway). Manim jobs are internal: renders go through the artifact registry (conversation-service).
             return "llm", "/api/v1" + normalized_path
         elif normalized_path.startswith("/graph"):
             return "graph", "/graph" + normalized_path[len("/graph"):]
@@ -47,6 +48,12 @@ class GatewayRouter:
             return "conversation", "/v1" + normalized_path
         elif normalized_path == "/preferences" or normalized_path.startswith("/preferences/"):
             # User AI / application preferences: owned by conversation-service.
+            return "conversation", "/v1" + normalized_path
+        elif normalized_path == "/artifacts" or normalized_path.startswith("/artifacts/"):
+            # Artifact registry (Mermaid / Manim), previews, downloads, retry: owned by conversation-service.
+            return "conversation", "/v1" + normalized_path
+        elif normalized_path == "/exports" or normalized_path.startswith("/exports/"):
+            # Conversation / hierarchy export jobs and downloads: owned by conversation-service.
             return "conversation", "/v1" + normalized_path
         elif normalized_path in ("/memory/settings", "/memory/facts") or normalized_path.startswith("/memory/facts/"):
             # User-facing memory controls only; /memory/health is answered by the gateway
