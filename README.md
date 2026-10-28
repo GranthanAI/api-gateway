@@ -151,3 +151,17 @@ The Gateway automatically polls the `/openapi.json` specs from the Auth, Convers
 3. **Call Protected Endpoints**:
    - All subsequent requests (like creating a conversation under **`Conversation Service`** or retrieving nodes from **`Graph Service`**) will automatically include your Bearer token in the `Authorization` header.
    - The Gateway validates the JWT, injects `X-User-Id` downstream, propagates the request context with an `X-Correlation-ID` header, and reverse proxies the call.
+
+## Client IP and `TRUSTED_PROXIES`
+
+The gateway sets `X-Forwarded-For` and `X-Real-IP` on every forwarded request from the real client address;
+client-supplied `X-Forwarded-For`, `X-Real-IP`, `Forwarded` and `CF-Connecting-IP` are never copied downstream.
+
+- `TRUSTED_PROXIES` (comma-separated IPs/CIDRs, default empty = trust nobody) lists the load balancers / TLS terminators
+  in front of the gateway. Only when the direct peer is in that list does the gateway read `CF-Connecting-IP` (preferred)
+  or walk `X-Forwarded-For` from the right to the first non-trusted hop, and append the peer to the outgoing chain.
+- **Production deploys must set `TRUSTED_PROXIES` to the LB's CIDR.** Otherwise every client looks like the LB and
+  per-IP rate limiting in downstream services (e.g. auth-service) effectively becomes one global limit.
+- Do not start the gateway with uvicorn `--proxy-headers`; it resolves forwarding headers itself.
+- Downstream services run uvicorn with `--proxy-headers --forwarded-allow-ips $FORWARDED_ALLOW_IPS`, which must include
+  the gateway's address.

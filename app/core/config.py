@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     MEMORY_SERVICE_URL: str = "http://localhost:8004"
     FILE_SERVICE_URL: str = "http://localhost:8006"
 
+    # Comma-separated IPs/CIDRs of the reverse proxies / load balancers in front of the gateway. X-Forwarded-For and
+    # CF-Connecting-IP are honoured ONLY when the direct peer is in this list. Empty = trust nobody (the peer is the
+    # client). In production set this to the LB's CIDR, otherwise every client looks like the LB.
+    TRUSTED_PROXIES: str = ""
+
     # Comma-separated browser origins allowed by CORS. Empty = the localhost
     # dev-server origins when ENVIRONMENT != production, and NO cross-origin
     # access in production. "*" is accepted only outside production, and then
@@ -42,6 +47,11 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.strip().lower() in ("production", "prod")
+
+    @property
+    def trusted_proxy_networks(self):
+        from app.core.client_ip import parse_trusted_proxies
+        return parse_trusted_proxies(self.TRUSTED_PROXIES)
 
     @property
     def cors_allow_origins(self) -> list[str]:
@@ -62,6 +72,7 @@ class Settings(BaseSettings):
         """In production the service refuses to start with a development default or a weak secret (a known default
         would let anyone forge tokens). Development and test environments are unaffected. Secret VALUES are never
         included in the error message."""
+        self.trusted_proxy_networks  # fail fast on a malformed TRUSTED_PROXIES in every environment
         if self.ENVIRONMENT.strip().lower() not in ("production", "prod"):
             return self
         dev_values = {"supersecretjwtkeyforauthservicelocaldvelopment12345", "graphgpt-jwt-secret", "graphgpt-memory-secret", "changeme", "secret"}

@@ -1,4 +1,6 @@
 from fastapi import Request
+from app.core.client_ip import FORWARDING_HEADERS, resolve_client
+from app.core.config import settings
 from app.middleware.correlation import get_correlation_id
 
 HOP_BY_HOP_HEADERS = [
@@ -27,9 +29,14 @@ class RequestForwarder:
         """
         headers = {}
         for k, v in request.headers.items():
-            if k.lower() not in HOP_BY_HOP_HEADERS:
+            if k.lower() not in HOP_BY_HOP_HEADERS and k.lower() not in FORWARDING_HEADERS:
                 headers[k] = v
                 
+        # Real client address, derived from the TCP peer (and trusted proxies only); never copied from the client.
+        client_ip, forwarded_for = resolve_client(request, settings.trusted_proxy_networks)
+        headers["X-Forwarded-For"] = forwarded_for
+        headers["X-Real-IP"] = client_ip
+
         # Inject tracing correlation context headers
         correlation_id = get_correlation_id()
         if correlation_id:
