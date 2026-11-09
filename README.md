@@ -32,6 +32,11 @@ The **API Gateway** serves as the single public entry point for all client appli
 | `/api/v1/sessions/*` | `/api/v1/sessions` | `AUTH_SERVICE_URL` | `/sessions/*` |
 | `/api/v1/conversations/*` | `/api/v1/conversations` | `CONVERSATION_SERVICE_URL` | `/v1/conversations/*` |
 | `/api/v1/graph/*` | `/api/v1/graph` | `GRAPH_SERVICE_URL` | `/graph/*` |
+| `/api/v1/billing/*` | `/api/v1/billing` | `BILLING_SERVICE_URL` | `/billing/v1/*` |
+| `/api/v1/billing/admin/*` | `/api/v1/billing/admin` | `BILLING_SERVICE_URL` | `/admin/billing/v1/*` (JWT `roles` has `billing_admin` or `support`, else 403) |
+| `/api/v1/billing/sim/*` | `/api/v1/billing/sim` | `BILLING_SERVICE_URL` | `/billing/v1/sim/*` (only when `BILLING_SIM_ROUTES=true`, else 404; control routes need `billing_admin` or `DEV_MODE_USERS`) |
+
+Billing is public (no JWT) only for `GET /billing/plans`, `GET /billing/models`, `POST /billing/webhooks/razorpay` (forwarded as raw bytes with only `Content-Type`, `X-Razorpay-Signature` and `x-razorpay-event-id`; no cookies or Authorization) and, with `BILLING_SIM_ROUTES=true`, `GET /billing/sim/checkout/<id>` and `POST /billing/sim/checkout/<id>/pay`. Everything else under `/billing` needs a JWT. `/billing/internal/*` is never routed. The gateway adds `X-Gateway-Secret` (`BILLING_GATEWAY_SECRET`) on billing calls only, and always strips client-sent `X-User-Id`, `X-Staff-Role` and `X-Gateway-Secret`.
 
 ---
 
