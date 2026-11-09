@@ -40,6 +40,9 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             payload = jwt_service.decode_token(token)
             # Store validated user identity in request state for downstream headers injection
             request.state.user_id = payload["sub"]
+            # Staff roles (auth-service issues them from P4); a missing or malformed claim means no roles.
+            roles = payload.get("roles")
+            request.state.roles = [r for r in roles if isinstance(r, str)] if isinstance(roles, list) else []
         except jwt.ExpiredSignatureError:
             logger.warning("Expired JWT token signature presented", path=path)
             return JSONResponse(

@@ -1,3 +1,6 @@
+import re
+
+from app.core.config import settings
 from app.gateway.service_registry import service_registry
 
 class GatewayRouter:
@@ -17,9 +20,14 @@ class GatewayRouter:
         # segment: file-service's /internal/** is service-to-service only, and
         # the HTTP client normalizes ".." so "/files/../internal/..." would
         # otherwise land on it.
+        if re.search(r"%(2e|2f|5c)", normalized_path, re.IGNORECASE) or "\\" in normalized_path:
+            return None
         segments = [s.lower() for s in normalized_path.split("/")]
         if any(s in ("..", ".", "internal") for s in segments):
             return None
+
+        if normalized_path == "/billing" or normalized_path.startswith("/billing/"):
+            return self._route_billing(normalized_path)
 
         if normalized_path.startswith("/auth"):
             return "auth", "/auth" + normalized_path[len("/auth"):]
@@ -61,5 +69,24 @@ class GatewayRouter:
             return "memory", normalized_path
             
         return None
+
+    @staticmethod
+    def _route_billing(path: str) -> tuple[str, str] | None:
+        """/billing/admin/<rest> -> /admin/billing/v1/<rest>; /billing/sim/<rest> -> /billing/v1/sim/<rest> (only when
+        BILLING_SIM_ROUTES); /billing/<rest> -> /billing/v1/<rest>. Admin and sim are matched (case-insensitively)
+        before the generic prefix so they can never fall through to it; a bare /billing/admin or /billing/sim is
+        not routed."""
+        rest = path[len("/billing"):].lstrip("/")
+        if not rest:
+            return None
+        head, _, tail = rest.partition("/")
+        if head.lower() == "admin":
+            return ("billing", "/admin/billing/v1/" + tail) if tail else None
+        if head.lower() == "sim":
+            if not settings.BILLING_SIM_ROUTES or not tail:
+                return None
+            return "billing", "/billing/v1/sim/" + tail
+        return "billing", "/billing/v1/" + rest
+
 
 gateway_router = GatewayRouter()

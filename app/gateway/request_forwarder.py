@@ -26,10 +26,27 @@ class RequestForwarder:
     Prepares headers, content, query parameters, and cookies from the incoming FastAPI request
     to be forwarded downstream, stripping connection/hop-by-hop headers and injecting context tracing.
     """
-    async def prepare_request(self, request: Request) -> tuple[dict, bytes, dict, dict]:
+    async def prepare_request(
+        self, request: Request, *, only_headers: frozenset[str] | None = None
+    ) -> tuple[dict, bytes, dict, dict]:
         """
         Returns (headers, body_content, query_params, cookies) for downstream forwarding.
+
+        only_headers: for a public machine-to-machine call (the Razorpay webhook) forward ONLY these client headers
+        (lowercase names): no cookies, no Authorization (also not from the access_token cookie), no X-User-Id.
+        The body is always the raw request bytes.
         """
+        if only_headers is not None:
+            headers = {k: v for k, v in request.headers.items() if k.lower() in only_headers}
+            client_ip, forwarded_for = resolve_client(request, settings.trusted_proxy_networks)
+            headers["X-Forwarded-For"] = forwarded_for
+            headers["X-Real-IP"] = client_ip
+            correlation_id = get_correlation_id()
+            if correlation_id:
+                headers["X-Correlation-ID"] = correlation_id
+                headers["X-Request-ID"] = correlation_id
+            return headers, await request.body(), dict(request.query_params), {}
+
         headers = {}
         for k, v in request.headers.items():
             if k.lower() not in HOP_BY_HOP_HEADERS and k.lower() not in FORWARDING_HEADERS:

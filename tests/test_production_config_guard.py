@@ -5,7 +5,8 @@ import pytest
 from app.core.config import Settings
 
 STRONG = "k9Qx2mV7pLr4Zt8WyB3nHd6Fs1JcUe5A"
-GOOD = dict(ENVIRONMENT="production", JWT_SECRET_KEY=STRONG)
+BILLING_STRONG = "Bq7Lm3Xv9Tn2Zc6Rw4Hy8Kd1Pf5Ja0Ue"
+GOOD = dict(ENVIRONMENT="production", JWT_SECRET_KEY=STRONG, BILLING_GATEWAY_SECRET=BILLING_STRONG)
 BAD = ["supersecretjwtkeyforauthservicelocaldvelopment12345", "short", ""]
 
 

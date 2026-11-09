@@ -20,7 +20,12 @@ STREAM_HOP_BY_HOP_HEADERS = {
     "content-encoding",
 }
 
-async def reverse_proxy(request: Request) -> Response:
+async def reverse_proxy(
+    request: Request,
+    *,
+    extra_headers: dict[str, str] | None = None,
+    only_headers: frozenset[str] | None = None,
+) -> Response:
     """
     Coordinates routing resolution, request preparation, execution, and
     response normalization for the API Gateway proxy pathing.
@@ -46,7 +51,9 @@ async def reverse_proxy(request: Request) -> Response:
     target_url = f"{base_url.rstrip('/')}{target_path}"
     
     # 1. Prepare Request Parameters
-    headers, body, params, cookies = await request_forwarder.prepare_request(request)
+    headers, body, params, cookies = await request_forwarder.prepare_request(request, only_headers=only_headers)
+    if extra_headers:  # set by the route handler (e.g. billing's X-Gateway-Secret), never copied from the client
+        headers.update(extra_headers)
     
     # Get the shared AsyncClient from app state
     client: httpx.AsyncClient = request.app.state.client

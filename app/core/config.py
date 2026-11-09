@@ -9,6 +9,9 @@ DEV_CORS_ORIGINS = [
 ]
 
 
+DEV_BILLING_GATEWAY_SECRET = "dev-gateway-secret"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(hide_input_in_errors=True, 
         env_file=".env",
@@ -27,6 +30,15 @@ class Settings(BaseSettings):
     GRAPH_SERVICE_URL: str = "http://localhost:8000"
     MEMORY_SERVICE_URL: str = "http://localhost:8004"
     FILE_SERVICE_URL: str = "http://localhost:8006"
+    BILLING_SERVICE_URL: str = "http://billing-api:8080"
+
+    # Sent as X-Gateway-Secret on every request to billing-service (and only there). Must equal one of billing's
+    # GATEWAY_SHARED_SECRET values. The development default is refused in production.
+    BILLING_GATEWAY_SECRET: str = DEV_BILLING_GATEWAY_SECRET
+    # Simulator routes (/billing/sim/*). Off by default; must be false in production.
+    BILLING_SIM_ROUTES: bool = False
+    # Comma-separated user IDs allowed to use the simulator control routes outside production (besides billing_admin).
+    DEV_MODE_USERS: str = ""
 
     # Comma-separated IPs/CIDRs of the reverse proxies / load balancers in front of the gateway. X-Forwarded-For and
     # CF-Connecting-IP are honoured ONLY when the direct peer is in this list. Empty = trust nobody (the peer is the
@@ -47,6 +59,10 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.strip().lower() in ("production", "prod")
+
+    @property
+    def dev_mode_users(self) -> frozenset[str]:
+        return frozenset(u.strip().lower() for u in self.DEV_MODE_USERS.split(",") if u.strip())
 
     @property
     def trusted_proxy_networks(self):
@@ -82,6 +98,12 @@ class Settings(BaseSettings):
             if not value or value in dev_values or len(value) < 32:
                 problems.append(f"{name} must be set to a unique secret of at least 32 characters")
         secret("JWT_SECRET_KEY", self.JWT_SECRET_KEY)
+        if self.BILLING_GATEWAY_SECRET == DEV_BILLING_GATEWAY_SECRET:
+            problems.append("BILLING_GATEWAY_SECRET must be set to a unique secret of at least 32 characters")
+        else:
+            secret("BILLING_GATEWAY_SECRET", self.BILLING_GATEWAY_SECRET)
+        if self.BILLING_SIM_ROUTES:
+            problems.append("BILLING_SIM_ROUTES must be false in production")
         if self.JWT_ALGORITHM not in ("HS256", "HS384", "HS512"):
             problems.append("JWT_ALGORITHM must be an HMAC algorithm (HS256/HS384/HS512)")
         if problems:

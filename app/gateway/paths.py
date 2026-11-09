@@ -47,7 +47,7 @@ def is_billing_public(norm: str, method: str) -> bool:
         return True
     if method == "POST" and norm == "/billing/webhooks/razorpay":
         return True
-    if getattr(settings, "BILLING_SIM_ROUTES", False):
+    if settings.BILLING_SIM_ROUTES:
         parts = norm.split("/")  # ["", "billing", "sim", "checkout", "<id>", ("pay")]
         if parts[:4] == ["", "billing", "sim", "checkout"] and len(parts) >= 5 and parts[4]:
             if method == "GET" and len(parts) == 5:

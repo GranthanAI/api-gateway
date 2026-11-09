@@ -11,6 +11,8 @@ HOP_BY_HOP_HEADERS = [
     "transfer-encoding",
     "upgrade",
     "content-length",
+    # httpx has already decoded the body; keeping the header would make the client decode it a second time
+    "content-encoding",
 ]
 
 class ResponseHandler:
