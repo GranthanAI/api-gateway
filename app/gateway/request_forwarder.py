@@ -16,6 +16,9 @@ HOP_BY_HOP_HEADERS = [
     # Identity is set only from the validated JWT below; a client-supplied
     # value (any casing) must never be forwarded.
     "x-user-id",
+    # Staff role and the billing shared secret are likewise set by the gateway only.
+    "x-staff-role",
+    "x-gateway-secret",
 ]
 
 class RequestForwarder:

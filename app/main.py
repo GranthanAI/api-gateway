@@ -156,8 +156,8 @@ def custom_openapi():
                             if path_suffix.startswith("/api/v1"):
                                 path_suffix = path_suffix[len("/api/v1"):]
                             
-                            from app.middleware.authentication import PUBLIC_PATHS
-                            if any(p in path_suffix for p in PUBLIC_PATHS):
+                            from app.gateway.paths import is_public_path
+                            if is_public_path(path_suffix, "GET"):
                                 is_public = True
 
                             # Update route tags and inject security requirement

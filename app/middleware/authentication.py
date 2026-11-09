@@ -4,23 +4,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.services.jwt_service import jwt_service
 from app.core.logging import logger
-
-PUBLIC_PATHS = [
-    "/openapi.json",
-    "/docs",
-    "/redoc",
-    "/auth/login",
-    "/auth/register",
-    "/auth/refresh",
-    "/auth/verify-email",
-    "/auth/resend-verification",
-    "/auth/forgot-password",
-    "/auth/reset-password",
-    "/health",
-    "/ready",
-    "/live",
-    "/info",
-]
+from app.gateway.paths import is_public_path
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -30,7 +14,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
         # Bypass auth for public paths
         path = request.url.path
-        if any(p in path for p in PUBLIC_PATHS):
+        if is_public_path(path, request.method):
             return await call_next(request)
 
         token = None
