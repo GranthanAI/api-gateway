@@ -16,7 +16,7 @@ PUBLIC_EXACT = frozenset({
     "/auth/forgot-password", "/auth/reset-password",
     "/health", "/ready", "/live", "/info",
     # health probes the gateway answers itself (api/routes/health.py)
-    "/auth/health", "/conversations/health", "/graph/health", "/llm/health", "/memory/health",
+    "/auth/health", "/conversations/health", "/graph/health", "/llm/health", "/memory/health", "/billing/health",
 })
 # Docs assets only; matched on a segment boundary ("/docs" or "/docs/...").
 PUBLIC_PREFIXES = ("/docs", "/redoc")

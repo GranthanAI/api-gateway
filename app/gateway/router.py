@@ -26,8 +26,13 @@ class GatewayRouter:
         if any(s in ("..", ".", "internal") for s in segments):
             return None
 
-        if normalized_path == "/billing" or normalized_path.startswith("/billing/"):
-            return self._route_billing(normalized_path)
+        # Billing gets the canonical path: duplicate slashes collapsed and one trailing slash dropped (case is kept), so
+        # "/billing/webhooks/razorpay/" and "/billing//webhooks/razorpay" reach billing's exact route.
+        billing_path = re.sub(r"/{2,}", "/", normalized_path)
+        if len(billing_path) > 1 and billing_path.endswith("/"):
+            billing_path = billing_path[:-1]
+        if billing_path == "/billing" or billing_path.startswith("/billing/"):
+            return self._route_billing(billing_path)
 
         if normalized_path.startswith("/auth"):
             return "auth", "/auth" + normalized_path[len("/auth"):]

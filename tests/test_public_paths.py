@@ -55,3 +55,11 @@ def test_query_string_cannot_make_a_path_public():
 @pytest.mark.parametrize("path", ["/api/v1/live", "/api/v1/ready"])
 def test_real_public_paths_skip_authentication(path):
     assert asyncio.run(asgi_status(path)) == 200
+
+
+def test_billing_health_probe_is_public_but_only_at_the_exact_path():
+    assert is_public_path("/api/v1/billing/health")
+    assert is_public_path("/api/v1/billing/health/")
+    for p in ("/api/v1/billing/healthx", "/api/v1/billing/health/x", "/api/v1/files/billing/health",
+              "/api/v1/billing/me/health", "/api/v1/billing/health/../me"):
+        assert not is_public_path(p), p

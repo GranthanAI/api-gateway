@@ -247,3 +247,42 @@ def test_production_refuses_the_default_secret_when_unset():
 def test_production_refuses_sim_routes(env):
     with pytest.raises(ValueError, match="BILLING_SIM_ROUTES"):
         Settings(_env_file=None, **{**PROD, "ENVIRONMENT": env, "BILLING_SIM_ROUTES": True})
+
+
+# --- canonical upstream path (P3x) ---------------------------------------------------------
+
+@pytest.mark.parametrize("path", [
+    "/api/v1/billing/webhooks/razorpay/", "/api/v1/billing//webhooks/razorpay",
+    "/api/v1/billing//webhooks//razorpay//", "/api/v1/billing/webhooks/razorpay",
+])
+def test_webhook_noncanonical_paths_reach_the_exact_upstream_path_with_identical_bytes(gateway, path):
+    body = '{"event":"payment.captured","note":"₹499 — café"}\r\n'.encode()
+    r = gateway.client.post(path, content=body, headers={"Content-Type": "application/json",
+                                                         "X-Razorpay-Signature": "sig", "x-razorpay-event-id": "e1"})
+    assert r.status_code == 200
+    (up,) = gateway.calls
+    assert up.url.path == "/billing/v1/webhooks/razorpay"
+    assert hashlib.sha256(up.content).hexdigest() == hashlib.sha256(body).hexdigest()
+    assert up.headers["x-razorpay-signature"] == "sig" and "authorization" not in up.headers
+
+
+@pytest.mark.parametrize("path,target", [
+    ("/api/v1/billing/plans/", "/billing/v1/plans"),
+    ("/api/v1/billing//me//models", "/billing/v1/me/models"),
+    ("/api/v1/billing/Invoices/AbC/pdf/", "/billing/v1/Invoices/AbC/pdf"),   # case is kept
+    ("/api/v1/billing//admin//accounts/", "/admin/billing/v1/accounts"),
+])
+def test_billing_forwards_the_normalised_path_without_lowercasing(path, target):
+    assert gateway_router.route_request(path) == ("billing", target)
+
+
+def test_noncanonical_admin_path_is_still_gated(gateway):
+    assert gateway.client.get("/api/v1/billing//admin//x/", headers=bearer()).status_code == 403
+    assert gateway.calls == []
+
+
+def test_production_refuses_dev_mode_users():
+    with pytest.raises(ValueError, match="DEV_MODE_USERS"):
+        Settings(_env_file=None, **{**PROD, "DEV_MODE_USERS": USER})
+    Settings(_env_file=None, DEV_MODE_USERS=USER)       # development may use it
+    Settings(_env_file=None, **{**PROD, "DEV_MODE_USERS": " , "})  # blank entries do not count

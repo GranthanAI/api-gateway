@@ -14,9 +14,18 @@ async def liveness():
 async def readiness(request: Request):
     """Readiness check verifying downstream client connection capability."""
     client_ok = hasattr(request.app.state, "client") and request.app.state.client is not None
+    details = {"client_pool": "UP" if client_ok else "DOWN"}
+    if client_ok:
+        # Billing's own readiness (database, Valkey, Kafka), reported for operators. It does not change the gateway's
+        # status: a billing outage must not take the rest of the gateway out of rotation.
+        try:
+            resp = await request.app.state.client.get(f"{settings.BILLING_SERVICE_URL.rstrip('/')}/readyz", timeout=2.0)
+            details["billing"] = "UP" if resp.status_code == status.HTTP_200_OK else "NOT_READY"
+        except Exception:
+            details["billing"] = "DOWN"
     return {
         "status": "UP" if client_ok else "DOWN",
-        "details": {"client_pool": "UP" if client_ok else "DOWN"}
+        "details": details
     }
 
 @router.get("/info", status_code=status.HTTP_200_OK)
@@ -36,6 +45,7 @@ async def gateway_info(request: Request):
         ("graph", settings.GRAPH_SERVICE_URL, "/graph/health"),
         ("memory", settings.MEMORY_SERVICE_URL, "/health"),
         ("file", settings.FILE_SERVICE_URL, "/health/live"),
+        ("billing", settings.BILLING_SERVICE_URL, "/healthz"),
     ]
     
     for name, base_url, path in checks:
@@ -122,3 +132,16 @@ async def memory_health(request: Request):
     except Exception as e:
         logger.error("Memory health check proxy failed", error=str(e))
         return {"status": "unhealthy", "detail": "Memory microservice is offline or timed out."}
+
+
+@router.get("/billing/health", status_code=status.HTTP_200_OK, tags=["Gateway Health & Information"])
+async def billing_health(request: Request):
+    """Proxies request to Billing Service readiness endpoint (public, no JWT; exact path)."""
+    client: httpx.AsyncClient = request.app.state.client
+    target_url = f"{settings.BILLING_SERVICE_URL.rstrip('/')}/readyz"
+    try:
+        resp = await client.get(target_url, timeout=5.0)
+        return resp.json()
+    except Exception as e:
+        logger.error("Billing health check proxy failed", error=str(e))
+        return {"status": "unhealthy", "detail": "Billing microservice is offline or timed out."}

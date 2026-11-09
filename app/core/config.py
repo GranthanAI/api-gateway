@@ -104,6 +104,8 @@ class Settings(BaseSettings):
             secret("BILLING_GATEWAY_SECRET", self.BILLING_GATEWAY_SECRET)
         if self.BILLING_SIM_ROUTES:
             problems.append("BILLING_SIM_ROUTES must be false in production")
+        if self.dev_mode_users:
+            problems.append("DEV_MODE_USERS must be empty in production")
         if self.JWT_ALGORITHM not in ("HS256", "HS384", "HS512"):
             problems.append("JWT_ALGORITHM must be an HMAC algorithm (HS256/HS384/HS512)")
         if problems:
