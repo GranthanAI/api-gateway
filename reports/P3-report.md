@@ -56,3 +56,30 @@ signature failures (`billing_webhook_signature_failed` or equivalent metric stay
   assets from `/billing/sim/*` they will need an explicit entry.
 - `roles` is read now; until P4 auth-service issues it, `/billing/admin/*` returns 403 as expected.
 - Decision for you: should `DEV_MODE_USERS` also be refused in production? It is inert there (sim routes must be off).
+
+## P3x exit check (14 Nov 2026, shared stack, against billing on 127.0.0.1:8090)
+
+Setup: `BILLING_SERVICE_URL`, `BILLING_GATEWAY_SECRET` (billing's `GATEWAY_SHARED_SECRET`, last assignment) and `BILLING_SIM_ROUTES=true` are now in the gateway's git-ignored `.env`; the gateway on 8080 was restarted from `.env` alone (no process environment). `git check-ignore` confirms `.env` is ignored; nothing was committed from it.
+Two billing-side fixes were needed first (billing commits G1-G3): the catalog held plan ids from another gateway (`catalog sync` now recreates them per gateway), and invoice PDFs lived only in the memory of the worker, so billing dev now stores them in the shared MinIO (bucket `billing-invoices`).
+
+**(a) Free user -> Pro through the gateway.** Throwaway user registered through `/api/v1/auth/register` and `/login`; `scripts/sim_checkout_demo.sh` with `BASE_URL=http://127.0.0.1:8080`:
+
+```
+1. a new user is on the Free plan        payment_mode: simulated
+5. verify -> {"status":"active"}         6. plan: pro, status: active
+7. invoice: SI/2627/000002               OK: Free -> pro (simulated payment, no real money)
+GET /api/v1/billing/me -> {'plan': 'pro', 'payment_mode': 'simulated'}
+```
+
+**(b) Webhooks.** `billing.webhook_inbox` for the checkout: `subscription.authenticated` (ignored: no state change), `subscription.activated` (ignored), `subscription.charged` (processed); metrics on 8090: `billing_webhooks_received_total{signature_ok="true"}` 1+1+1, `billing_webhook_rejected_total 0`, `billing_webhook_failed_total 0`. Zero signature failures.
+
+**(c) Invoice PDF through the gateway = direct.** `GET /api/v1/billing/invoices/<id>/pdf` (HTTP 200, 13,154 bytes, `%PDF-1.7`) and `GET 127.0.0.1:8090/billing/v1/invoices/<id>/pdf` with `X-Gateway-Secret` + `X-User-Id`:
+
+```
+2c0207c266f270afd39f98d9c1895cd3e39bb132347d88683f2de199994c0227   via the gateway
+2c0207c266f270afd39f98d9c1895cd3e39bb132347d88683f2de199994c0227   direct to billing
+```
+
+(The route answers a 302 to a presigned object-store URL; the hashes are of the followed download.)
+
+**(d) Admin routes with a normal user's JWT.** `GET /api/v1/billing/admin/accounts/<id>` -> 403 `{"detail":"Insufficient permissions."}`; `POST /api/v1/billing/admin/overrides` -> 403.
